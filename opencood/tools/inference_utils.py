@@ -57,6 +57,19 @@ def inference_early_fusion(batch_data, model, dataset):
         The tensor of prediction bounding box after NMS.
     gt_box_tensor : torch.Tensor
         The tensor of gt bounding box.
+    
+    早期融合模型的推理
+    参数
+    ----------
+    batch_data：dict
+    model：opencood.object
+    dataset：opencood.EarlyFusionDataset
+    返回
+    -------
+    pred_box_tensor：torch.Tensor
+        NMS后的预测边界框张量。
+    gt_box_tensor：torch.Tensor
+        gt边界框的张量。
     """
     output_dict = OrderedDict()
     cav_content = batch_data['ego']
@@ -86,6 +99,19 @@ def inference_intermediate_fusion(batch_data, model, dataset):
         The tensor of prediction bounding box after NMS.
     gt_box_tensor : torch.Tensor
         The tensor of gt bounding box.
+        
+    早期融合模型的推理
+    参数
+    ----------
+    batch_data：dict
+    model：opencood.object
+    dataset：opencood.EarlyFusionDataset
+    返回
+    -------
+    pred_box_tensor：torch.Tensor
+        NMS后的预测边界框张量。
+    gt_box_tensor：torch.Tensor
+        gt边界框的张量。
     """
     return inference_early_fusion(batch_data, model, dataset)
 
@@ -93,6 +119,7 @@ def inference_intermediate_fusion(batch_data, model, dataset):
 def save_prediction_gt(pred_tensor, gt_tensor, pcd, timestamp, save_path):
     """
     Save prediction and gt tensor to txt file.
+    保存预测和gt张量到txt文件。
     """
     pred_np = torch_tensor_to_numpy(pred_tensor)
     gt_np = torch_tensor_to_numpy(gt_tensor)

@@ -28,6 +28,8 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
     """
     This class is for intermediate fusion where each vehicle transmit the
     deep features to ego.
+    这个类是用于中间融合，其中每辆车将深度特征传输给ego。
+    ego的含义是自己的车辆，cav的含义是其他车辆。
     """
     def __init__(self, params, visualize, train=True):
         super(IntermediateFusionDataset, self). \
@@ -36,6 +38,7 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
         # if project first, cav's lidar will first be projected to
         # the ego's coordinate frame. otherwise, the feature will be
         # projected instead.
+        # 如果首次进行投影，cav的lidar将首先投影到ego的坐标框架中。否则，将投影特征。
         self.proj_first = True
         if 'proj_first' in params['fusion']['args'] and \
             not params['fusion']['args']['proj_first']:
@@ -54,9 +57,11 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
             train)
 
     def __getitem__(self, idx):
+        # 获取基础数据
         base_data_dict = self.retrieve_base_data(idx,
                                                  cur_ego_pose_flag=self.cur_ego_pose_flag)
 
+        # 创建一个新的字典，添加一个ego的key,值为一个字典
         processed_data_dict = OrderedDict()
         processed_data_dict['ego'] = {}
 
@@ -121,6 +126,9 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
             # their lidar to ego and when the ego receives the feature, and
             # this variable is used to correct such pose difference (ego_t-1 to
             # ego_t)
+            # 这只有在proj_first = True且考虑通信延迟时才有用。现在只有V2X-ViT
+            # 使用spatial_correction。当cav将其lidar投影到ego并且ego接收到该特征时，
+            # 存在时间延迟，该变量用于纠正此类姿势差异（ego_t-1 to ego_t）
             spatial_correction_matrix.append(
                 selected_cav_base['params']['spatial_correction_matrix'])
             infra.append(1 if int(cav_id) < 0 else 0)
@@ -402,6 +410,20 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
             The tensor of prediction bounding box after NMS.
         gt_box_tensor : torch.Tensor
             The tensor of gt bounding box.
+        
+        处理模型的输出为2D/3D边界框。
+        参数
+        ----------
+        data_dict：dict
+            包含模型原始输入数据的字典。
+        output_dict：dict
+            包含模型输出的字典。
+        返回
+        -------
+        pred_box_tensor：torch.Tensor
+            NMS后的预测边界框张量。
+        gt_box_tensor：torch.Tensor
+            gt边界框的张量。
         """
         pred_box_tensor, pred_score = \
             self.post_processor.post_process(data_dict, output_dict)

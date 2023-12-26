@@ -15,6 +15,7 @@ class Communication(nn.Module):
     def __init__(self, args):
         super(Communication, self).__init__()
         # Threshold of objectiveness
+        # 
         self.threshold = args['threshold']
         if 'gaussian_smooth' in args:
             # Gaussian Smooth
@@ -40,8 +41,9 @@ class Communication(nn.Module):
         """
         Args:
             batch_confidence_maps: [(L1, H, W), (L2, H, W), ...]
+        参数batch_confidence_maps是一个list，每个元素是一个cav的置信度图，shape为(L, H, W)，其中L是cav的数量，H, W是特征图的高和宽
         """
-
+        # B, L, H, W = batch_confidence_maps.shape， B是batch_size，L是cav的数量，H, W是特征图的高和宽
         _, _, H, W = batch_confidence_maps[0].shape
 
         communication_masks = []
@@ -120,6 +122,7 @@ class Where2comm(nn.Module):
         self.naive_communication = Communication(args['communication'])
 
     def regroup(self, x, record_len):
+        # regroup函数的作用是将x按照record_len进行分组
         cum_sum_len = torch.cumsum(record_len, dim=0)
         split_x = torch.tensor_split(x, cum_sum_len[:-1].cpu())
         return split_x
@@ -135,6 +138,17 @@ class Where2comm(nn.Module):
 
         Returns:
             Fused feature.
+        
+        x是输入数据，shape为(sum(n_cav), C, H, W)，表示所有cav的特征图，其中sum(n_cav)表示所有cav的点数，C是通道数，H, W是特征图的高和宽
+        pssm_single是一个tensor，shape为(B, L, H, W)，其中B是batch_size，L是cav的数量，H, W是特征图的高和宽
+        record_len是一个list，记录了每个batch中每个cav的点数
+        参数x是一个tensor，shape为(B, C, H, W)
+        其中B是batch_size，C是通道数，H, W是特征图的高和宽
+        
+        参数record_len是一个list，记录了每个batch中每个cav的点数
+        
+        参数pairwise_t_matrix是一个tensor，shape为(B, L, L, 4, 4)
+        其中B是batch_size，L是cav的数量，4, 4是变换矩阵的shape
         """
 
         _, C, H, W = x.shape
@@ -147,6 +161,7 @@ class Where2comm(nn.Module):
                 x = backbone.blocks[i](x)
 
                 # 1. Communication (mask the features)
+                # 通信模块，将每个cav的特征图进行mask
                 if i == 0:
                     if self.fully:
                         communication_rates = torch.tensor(1).to(x.device)
@@ -163,6 +178,9 @@ class Where2comm(nn.Module):
                 # split_x: [(L1, C, H, W), (L2, C, H, W), ...]
                 # For example [[2, 256, 48, 176], [1, 256, 48, 176], ...]
                 batch_node_features = self.regroup(x, record_len)
+                # 2. 分割特征图
+                # batch_node_features是一个list，每个元素是一个cav的特征图，shape为(C, H, W)
+                # 例如[[256, 48, 176], [256, 48, 176], ...]
 
                 # 3. Fusion
                 x_fuse = []
@@ -186,10 +204,17 @@ class Where2comm(nn.Module):
                 x_fuse = backbone.deblocks[-1](x_fuse)
         else:
             # 1. Communication (mask the features)
+            # 通信模块，将每个cav的特征图进行mask
+            # 通信的步骤
+            # 1. 将psm_single的shape转换为(B, L, H, W)
+            # 2. 获取每个cav的最大置信度，shape为(B, L, 1, 1)，communication_masks代表了每个cav的最大置信度， shape为(B, L, 1, 1)。 1代表了通信的范围。 0代表了不通信，1代表了通信，通信的范围是1，也就是只有自己和自己通信。
+            #    communication_masks的shape为(B, L, 1, 1)，其中B是batch_size，L是cav的数量
+            #    communication_rates代表了每个cav的通信率，shape为(B, L, 1, 1), 通信率是指通信的cav的数量占总cav数量的比例, 通信率的计算公式为communication_rate = communication_mask.sum() / (L * H * W), 其中L是cav的数量，H, W是特征图的高和宽, communication_mask.sum()表示
             if self.fully:
                 communication_rates = torch.tensor(1).to(x.device)
             else:
                 # Prune
+                # prune是指剪枝，这里的剪枝是指将置信度小于阈值的cav的特征图进行mask
                 batch_confidence_maps = self.regroup(psm_single, record_len)
                 communication_masks, communication_rates = self.naive_communication(batch_confidence_maps, B)
                 x = x * communication_masks

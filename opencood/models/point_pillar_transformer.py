@@ -8,7 +8,12 @@ from opencood.models.fuse_modules.fuse_utils import regroup
 from opencood.models.sub_modules.downsample_conv import DownsampleConv
 from opencood.models.sub_modules.naive_compress import NaiveCompressor
 from opencood.models.fuse_modules.v2xvit_basic import V2XTransformer
-
+# 这个类的作用是
+# 1. 将点云转换为体素
+# 2. 将体素转换为BEV图
+# 3. 将BEV图送入Transformer
+# 4. 将Transformer的输出送入head
+# 5. 输出结果
 
 class PointPillarTransformer(nn.Module):
     def __init__(self, args):
@@ -16,6 +21,9 @@ class PointPillarTransformer(nn.Module):
 
         self.max_cav = args['max_cav']
         # PIllar VFE
+        # 4 channels for dt, dv, infra, prior encoding
+        # 初始化PillarVFE
+        # 4个通道，分别是dt, dv, infra, prior encoding
         self.pillar_vfe = PillarVFE(args['pillar_vfe'],
                                     num_point_features=4,
                                     voxel_size=args['voxel_size'],
@@ -23,6 +31,7 @@ class PointPillarTransformer(nn.Module):
         self.scatter = PointPillarScatter(args['point_pillar_scatter'])
         self.backbone = BaseBEVBackbone(args['base_bev_backbone'], 64)
         # used to downsample the feature map for efficient computation
+        # 用于下采样特征图，以便进行有效的计算
         self.shrink_flag = False
         if 'shrink_header' in args:
             self.shrink_flag = True
@@ -46,6 +55,7 @@ class PointPillarTransformer(nn.Module):
     def backbone_fix(self):
         """
         Fix the parameters of backbone during finetune on timedelay。
+        修复由于时间延迟而进行微调时的骨干参数。
         """
         for p in self.pillar_vfe.parameters():
             p.requires_grad = False
@@ -75,7 +85,7 @@ class PointPillarTransformer(nn.Module):
         record_len = data_dict['record_len']
         spatial_correction_matrix = data_dict['spatial_correction_matrix']
 
-        # B, max_cav, 3(dt dv infra), 1, 1
+        # B, max_cav, 3(dt dv infra), 1, 
         prior_encoding =\
             data_dict['prior_encoding'].unsqueeze(-1).unsqueeze(-1)
 

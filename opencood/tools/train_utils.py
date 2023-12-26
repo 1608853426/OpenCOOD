@@ -255,7 +255,9 @@ def setup_lr_schedular(hypes, optimizer, n_iter_per_epoch):
 
     return scheduler
 
-
+""" 
+to_device 方法的作用是将输入的数据转移到指定的设备上
+"""
 def to_device(inputs, device):
     if isinstance(inputs, list):
         return [to_device(x, device) for x in inputs]

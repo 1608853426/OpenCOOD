@@ -54,6 +54,31 @@ class BaseDataset(Dataset):
 
     data_augmentor : opencood.data_augmentor
         Used to augment data.
+    
+    用于所有类型的融合的基本数据集。 主要用于初始化
+    数据库并将__get_item__索引与正确的时间戳关联
+    和场景。
+    参数
+    __________
+    params：dict
+        包含所有训练/测试参数的字典。
+    visualize：false
+        如果设置为true，则原始点云将保存在内存中
+        用于可视化。
+    属性
+    ----------
+    scenario_database：OrderedDict
+        结构化字典包含所有文件信息。
+    len_record：list
+        该列表用于记录每个场景的数据长度。 这是用来
+        在训练期间检索正确的索引。
+    pre_processor：opencood.pre_processor
+        用于预处理原始数据。
+    post_processor：opencood.post_processor
+        用于生成训练标签并将模型输出转换为
+        bbx格式。
+    data_augmentor：opencood.data_augmentor
+        用于增强数据。
 
     """
 
@@ -68,6 +93,7 @@ class BaseDataset(Dataset):
                                             train)
 
         # if the training/testing include noisy setting
+        # 训练/测试是否包含噪声设置
         if 'wild_setting' in params:
             self.seed = params['wild_setting']['seed']
             # whether to add time delay
@@ -116,19 +142,23 @@ class BaseDataset(Dataset):
             self.max_cav = params['train_params']['max_cav']
 
         # first load all paths of different scenarios
+        # 首先加载不同场景的所有路径
         scenario_folders = sorted([os.path.join(root_dir, x)
                                    for x in os.listdir(root_dir) if
                                    os.path.isdir(os.path.join(root_dir, x))])
         # Structure: {scenario_id : {cav_1 : {timestamp1 : {yaml: path,
         # lidar: path, cameras:list of path}}}}
+        # 结构：{场景ID：{cav_1：{timestamp1：{yaml：路径，lidar：路径，cameras：路径列表}}}}
         self.scenario_database = OrderedDict()
         self.len_record = []
 
         # loop over all scenarios
+        # 循环所有场景
         for (i, scenario_folder) in enumerate(scenario_folders):
             self.scenario_database.update({i: OrderedDict()})
 
             # at least 1 cav should show up
+            # 至少应该出现1个cav
             cav_list = sorted([x for x in os.listdir(scenario_folder)
                                if os.path.isdir(
                     os.path.join(scenario_folder, x))])
@@ -137,10 +167,13 @@ class BaseDataset(Dataset):
             # roadside unit data's id is always negative, so here we want to
             # make sure they will be in the end of the list as they shouldn't
             # be ego vehicle.
+            # 路边单元数据的ID始终为负，因此在这里我们希望确保它们将在列表的末尾，
+            # 因为它们不应该是自我车辆。
             if int(cav_list[0]) < 0:
                 cav_list = cav_list[1:] + [cav_list[0]]
 
             # loop over all CAV data
+            # 循环所有CAV数据
             for (j, cav_id) in enumerate(cav_list):
                 if j > self.max_cav - 1:
                     print('too many cavs')
@@ -148,9 +181,11 @@ class BaseDataset(Dataset):
                 self.scenario_database[i][cav_id] = OrderedDict()
 
                 # save all yaml files to the dictionary
+                # 将所有yaml文件保存到字典中
                 cav_path = os.path.join(scenario_folder, cav_id)
 
                 # use the frame number as key, the full path as the values
+                # 使用帧编号作为键，使用完整路径作为值
                 yaml_files = \
                     sorted([os.path.join(cav_path, x)
                             for x in os.listdir(cav_path) if
@@ -176,8 +211,10 @@ class BaseDataset(Dataset):
                 # Assume all cavs will have the same timestamps length. Thus
                 # we only need to calculate for the first vehicle in the
                 # scene.
+                # 假设所有cav的时间戳长度都相同。 因此，我们只需要为场景中的第一个车辆计算。
                 if j == 0:
                     # we regard the agent with the minimum id as the ego
+                    # 我们将具有最小ID的代理视为自己
                     self.scenario_database[i][cav_id]['ego'] = True
                     if not self.len_record:
                         self.len_record.append(len(timestamps))
@@ -216,6 +253,18 @@ class BaseDataset(Dataset):
         data : dict
             The dictionary contains loaded yaml params and lidar data for
             each cav.
+        
+        给定索引，返回相应的数据。
+        参数
+        ----------
+        idx：int
+            数据加载器给出的索引。
+        
+        cur_ego_pose_flag：bool
+            指示是否使用当前时间戳的自我姿态来计算
+            转换矩阵。 如果设置为false，意味着当其他cav
+            将他们的LiDAR点云投影到ego时，他们正在投影到
+            过去的自我姿态。
         """
         # we loop the accumulated length list to see get the scenario index
         scenario_index = 0
@@ -276,6 +325,7 @@ class BaseDataset(Dataset):
         -------
         timestamps : list
             The list containing timestamps only.
+        给出
         """
         timestamps = []
 

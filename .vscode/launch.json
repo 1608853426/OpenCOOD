@@ -1,0 +1,43 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    //intermediate
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "v2x-vit",
+            "type": "python",
+            "request": "launch",
+            "python": "/root/anaconda3/envs/opencood/bin/python",
+            "program": "${workspaceFolder}/opencood/tools/inference.py",
+            "args": [
+                "--model_dir","${workspaceFolder}/opencood/logs/v2x-vit/",
+                "--fusion_method","intermediate"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "where2comm",
+            "type": "python",
+            "request": "launch",
+            "python": "/root/anaconda3/envs/opencood/bin/python",
+            "program": "${workspaceFolder}/opencood/tools/inference.py",
+            "args": [
+                "--model_dir","${workspaceFolder}/opencood/logs/point_pillar_where2comm_v2xset/",
+                "--fusion_method","intermediate"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Python: 当前文件",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

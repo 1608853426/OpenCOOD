@@ -46,15 +46,20 @@ def test_parser():
 
 
 def main():
+    # 读取参数
     opt = test_parser()
+    # 断言参数
     assert opt.fusion_method in ['late', 'early', 'intermediate']
+    # 断言参数
     assert not (opt.show_vis and opt.show_sequence), 'you can only visualize ' \
                                                     'the results in single ' \
                                                     'image mode or video mode'
-
+    #加载yaml文件
     hypes = yaml_utils.load_yaml(None, opt)
 
     print('Dataset Building')
+    
+    # 加载数据集
     opencood_dataset = build_dataset(hypes, visualize=True, train=False)
     print(f"{len(opencood_dataset)} samples found.")
     data_loader = DataLoader(opencood_dataset,
@@ -79,6 +84,8 @@ def main():
 
     # Create the dictionary for evaluation.
     # also store the confidence score for each prediction
+    # 用于评估的字典
+    # 同时存储每个预测的置信度分数
     result_stat = {0.3: {'tp': [], 'fp': [], 'gt': 0, 'score': []},                
                    0.5: {'tp': [], 'fp': [], 'gt': 0, 'score': []},                
                    0.7: {'tp': [], 'fp': [], 'gt': 0, 'score': []}}
@@ -92,14 +99,24 @@ def main():
         vis.get_render_option().show_coordinate_frame = True
 
         # used to visualize lidar points
+        # 用于可视化激光雷达点
         vis_pcd = o3d.geometry.PointCloud()
         # used to visualize object bounding box, maximum 50
+        # 用于可视化对象边界框，最大50
         vis_aabbs_gt = []
         vis_aabbs_pred = []
         for _ in range(50):
             vis_aabbs_gt.append(o3d.geometry.LineSet())
             vis_aabbs_pred.append(o3d.geometry.LineSet())
 
+    # start inference
+    # 开始推理
+    # tqdm是一个快速，可扩展的Python进度条，可以在Python长循环中添加一个进度提示信息，用户只需要封装任意的迭代器tqdm(iterator)
+    # tqdm自动运行并显示进度
+    # enumerate()函数用于将一个可遍历的数据对象(如列表、元组或字符串)组合为一个索引序列，同时列出数据和数据下标
+    # 每一轮循环中，i是索引，batch_data是数据
+    # 判断opt.fusion_method是late, early还是intermediate
+    # 如果是late，调用inference_late_fusion
     for i, batch_data in tqdm(enumerate(data_loader)):
         # print(i)
         with torch.no_grad():
@@ -109,6 +126,11 @@ def main():
                     inference_utils.inference_late_fusion(batch_data,
                                                           model,
                                                           opencood_dataset)
+            # 如果是early，调用inference_early_fusion
+            # 输出pred_box_tensor, pred_score, gt_box_tensor
+            # pred_box_tensor是预测边界框张量
+            # pred_score是预测分数
+            # gt_box_tensor是gt边界框张量
             elif opt.fusion_method == 'early':
                 pred_box_tensor, pred_score, gt_box_tensor = \
                     inference_utils.inference_early_fusion(batch_data,
