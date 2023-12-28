@@ -32,6 +32,15 @@
             "justMyCode": true
         },
         {
+            "name": "communcation",
+            "type": "python",
+            "request": "launch",
+            "python": "/root/anaconda3/envs/opencood/bin/python",
+            "program": "${workspaceFolder}/opencood/communication/generating_features.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Python: 当前文件",
             "type": "python",
             "request": "launch",

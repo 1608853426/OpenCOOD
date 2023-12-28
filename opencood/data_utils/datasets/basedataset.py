@@ -266,7 +266,7 @@ class BaseDataset(Dataset):
             将他们的LiDAR点云投影到ego时，他们正在投影到
             过去的自我姿态。
         """
-        # we loop the accumulated length list to see get the scenario index
+        # we loop the accumulated length list to see get the scenario index， 我们循环累积长度列表以查看获取场景索引
         scenario_index = 0
         for i, ele in enumerate(self.len_record):
             if idx < ele:

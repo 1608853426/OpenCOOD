@@ -52,7 +52,7 @@ class PFNLayer(nn.Module):
             x_concatenated = torch.cat([x, x_repeat], dim=2)
             return x_concatenated
 
-
+# Pillar VFE的作用是将点云数据转换为体素数据，这里的体素数据是一个三维张量，每个体素的特征维度为64
 class PillarVFE(nn.Module):
     def __init__(self, model_cfg, num_point_features, voxel_size,
                  point_cloud_range):

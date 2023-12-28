@@ -57,7 +57,9 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
             train)
 
     def __getitem__(self, idx):
-        # 获取基础数据
+        # 获取基础数据,这里可以做通信
+        all_ids = {}
+        cav_ids = []
         base_data_dict = self.retrieve_base_data(idx,
                                                  cur_ego_pose_flag=self.cur_ego_pose_flag)
 
@@ -73,7 +75,11 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
             if cav_content['ego']:
                 ego_id = cav_id
                 ego_lidar_pose = cav_content['params']['lidar_pose']
-                break
+                all_ids['ego'] = ego_id
+            cav_ids.append(cav_id)
+        
+        all_ids['cav'] = cav_ids
+        cav_id = ego_id
         assert cav_id == list(base_data_dict.keys())[
             0], "The first element in the OrderedDict must be ego"
         assert ego_id != -1
@@ -186,7 +192,8 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
              'time_delay': time_delay,
              'infra': infra,
              'spatial_correction_matrix': spatial_correction_matrix,
-             'pairwise_t_matrix': pairwise_t_matrix})
+             'pairwise_t_matrix': pairwise_t_matrix,
+             'all_ids': all_ids})
 
         if self.visualize:
             processed_data_dict['ego'].update({'origin_lidar':
@@ -297,7 +304,7 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
         velocity = []
         time_delay = []
         infra = []
-
+        all_ids = []
         # pairwise transformation matrix
         pairwise_t_matrix_list = []
 
@@ -324,7 +331,7 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
             infra.append(ego_dict['infra'])
             spatial_correction_matrix_list.append(
                 ego_dict['spatial_correction_matrix'])
-
+            all_ids.append(ego_dict['all_ids'])
             if self.visualize:
                 origin_lidar.append(ego_dict['origin_lidar'])
         # convert to numpy, (B, max_num, 7)
@@ -363,7 +370,10 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
                                    'object_ids': object_ids[0],
                                    'prior_encoding': prior_encoding,
                                    'spatial_correction_matrix': spatial_correction_matrix_list,
-                                   'pairwise_t_matrix': pairwise_t_matrix})
+                                   'pairwise_t_matrix': pairwise_t_matrix,
+                                   'time_delay': time_delay,
+                                   'all_ids': all_ids
+                                   })
 
         if self.visualize:
             origin_lidar = \
