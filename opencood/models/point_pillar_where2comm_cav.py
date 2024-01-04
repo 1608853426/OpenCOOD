@@ -1,4 +1,6 @@
 import torch.nn as nn
+import torch
+import io
 
 from opencood.models.sub_modules.base_bev_backbone import BaseBEVBackbone
 from opencood.models.fuse_modules.where2comm_fuse import Where2comm
@@ -6,7 +8,7 @@ from opencood.models.sub_modules.downsample_conv import DownsampleConv
 from opencood.models.sub_modules.naive_compress import NaiveCompressor
 from opencood.models.sub_modules.pillar_vfe import PillarVFE
 from opencood.models.sub_modules.point_pillar_scatter import PointPillarScatter
-
+from opencood.utils.redis_utils import RedisUtils
 
 class PointPillarWhere2commCav(nn.Module):
     def __init__(self, args):
@@ -41,7 +43,8 @@ class PointPillarWhere2commCav(nn.Module):
 
         if args['backbone_fix']:
             self.backbone_fix()
-
+        self.redis_utils = RedisUtils()
+    
     def backbone_fix(self):
         """
         Fix the parameters of backbone during finetune on timedelay.
@@ -85,6 +88,23 @@ class PointPillarWhere2commCav(nn.Module):
         batch_dict = self.scatter(batch_dict)
         batch_dict = self.backbone(batch_dict)
         
+        #to do: get cav feature
+        all_ids = data_dict['all_ids'][0]
+        ego_id = all_ids['ego']
+        cav = all_ids['cav']
+        cav_timestamp = all_ids['cav_timestamp']
+        feature_map = dict()
+        for i in range(len(cav)):
+            if cav[i] != ego_id:
+                key = "cav_feature_2d_" + str(cav_timestamp[i])
+                buffer = io.BytesIO()
+                torch.save(batch_dict['spatial_features_2d'][i].cpu(), buffer)
+                value = buffer.getvalue()
+                feature_map[key] = value
+                self.redis_utils.set(key, value)
+                
+        
+        #######
 
         # N, C, H', W': [N, 256, 48, 176]
         spatial_features_2d = batch_dict['spatial_features_2d']

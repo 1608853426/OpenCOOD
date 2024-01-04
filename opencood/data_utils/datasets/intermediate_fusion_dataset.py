@@ -60,6 +60,7 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
         # 获取基础数据,这里可以做通信
         all_ids = {}
         cav_ids = []
+        cav_id_timestamps = []
         base_data_dict = self.retrieve_base_data(idx,
                                                  cur_ego_pose_flag=self.cur_ego_pose_flag)
 
@@ -77,8 +78,11 @@ class IntermediateFusionDataset(basedataset.BaseDataset):
                 ego_lidar_pose = cav_content['params']['lidar_pose']
                 all_ids['ego'] = ego_id
             cav_ids.append(cav_id)
+            cav_id_timestamps.append(str(cav_id) + "_" +str(cav_content['timestamp_key']))
+            
         
         all_ids['cav'] = cav_ids
+        all_ids['cav_timestamp'] = cav_id_timestamps
         cav_id = ego_id
         assert cav_id == list(base_data_dict.keys())[
             0], "The first element in the OrderedDict must be ego"

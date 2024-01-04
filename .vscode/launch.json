@@ -32,6 +32,19 @@
             "justMyCode": true
         },
         {
+            "name": "where2comm_ego",
+            "type": "python",
+            "request": "launch",
+            "python": "/root/anaconda3/envs/opencood/bin/python",
+            "program": "${workspaceFolder}/opencood/tools/inference_ego.py",
+            "args": [
+                "--model_dir","${workspaceFolder}/opencood/logs/point_pillar_where2comm_v2xset/",
+                "--fusion_method","intermediate"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "communcation",
             "type": "python",
             "request": "launch",

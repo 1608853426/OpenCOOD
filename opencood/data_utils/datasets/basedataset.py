@@ -309,6 +309,7 @@ class BaseDataset(Dataset):
                                                        cur_ego_pose_flag)
             data[cav_id]['lidar_np'] = \
                 pcd_utils.pcd_to_np(cav_content[timestamp_key_delay]['lidar'])
+            data[cav_id]['timestamp_key'] = timestamp_key
         return data
 
     @staticmethod
@@ -334,7 +335,6 @@ class BaseDataset(Dataset):
 
             timestamp = res.replace('.yaml', '')
             timestamps.append(timestamp)
-
         return timestamps
 
     @staticmethod

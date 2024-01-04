@@ -7,7 +7,6 @@ import os
 from collections import OrderedDict
 
 import numpy as np
-import torch
 
 from opencood.utils.common_utils import torch_tensor_to_numpy
 
